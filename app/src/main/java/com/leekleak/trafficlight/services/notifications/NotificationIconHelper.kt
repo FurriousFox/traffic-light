@@ -10,25 +10,35 @@ import androidx.compose.ui.unit.Density
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.IconCompat
 import com.leekleak.trafficlight.R
-import com.leekleak.trafficlight.ui.theme.notificationIconFont
+import com.leekleak.trafficlight.ui.theme.googleSans
 import com.leekleak.trafficlight.util.convertFontFamilyToTypeface
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class NotificationIconHelper(private val context: Context) {
-    private val paint by lazy {
+    private val multiplier = 24 * Density(context).density / 96f
+    private val paintValue by lazy {
         Paint().apply {
             color = context.getColor(R.color.white)
-            typeface = convertFontFamilyToTypeface(context, notificationIconFont())
+            typeface = convertFontFamilyToTypeface(context, googleSans(weight = 500f, width = 50f))
             textAlign = Paint.Align.CENTER
+            textSize = 82f * multiplier
+            letterSpacing = -0.05f * multiplier
+        }
+    }
+    private val paintUnit by lazy {
+        Paint().apply {
+            color = context.getColor(R.color.white)
+            typeface = convertFontFamilyToTypeface(context, googleSans(weight = 600f, width = 110f))
+            textAlign = Paint.Align.CENTER
+            textSize = 36f * multiplier
+            letterSpacing = 0f * multiplier
         }
     }
     private var cachedIcons = LruCache<String, IconCompat>(50)
     private var bitmap: Bitmap? = null
     private val bitmapMutex = Mutex()
     suspend fun createIcon(speed: String, unit: String): IconCompat {
-        val density = Density(context)
-        val multiplier = 24 * density.density / 96f * 1f
         val height = (96 * multiplier).toInt()
 
         val iconTag = "$speed$unit$height"
@@ -44,17 +54,8 @@ class NotificationIconHelper(private val context: Context) {
 
             val canvas = Canvas(bitmap!!)
 
-            paint.apply {
-                textSize = 72f * multiplier
-                letterSpacing = -0.05f * multiplier
-            }
-            canvas.drawText(speed, 48f * multiplier, 54f * multiplier, paint)
-
-            paint.apply {
-                textSize = 46f * multiplier
-                letterSpacing = 0f * multiplier
-            }
-            canvas.drawText(unit, 48f * multiplier, 94f * multiplier, paint)
+            canvas.drawText(speed, 48f * multiplier, 62f * multiplier, paintValue)
+            canvas.drawText(unit, 48f * multiplier, 94f * multiplier, paintUnit)
 
             /**
              * Don't cache numbers with many digits as they appear much more often and are unlikely
