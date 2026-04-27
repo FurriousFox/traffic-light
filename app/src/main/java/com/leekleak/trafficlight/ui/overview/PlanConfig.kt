@@ -127,7 +127,7 @@ import com.leekleak.trafficlight.ui.settings.SwitchPreference
 import com.leekleak.trafficlight.ui.theme.backgrounds
 import com.leekleak.trafficlight.ui.theme.card
 import com.leekleak.trafficlight.ui.theme.doHyeonFont
-import com.leekleak.trafficlight.ui.theme.robotoFlex
+import com.leekleak.trafficlight.ui.theme.longGoogleSans
 import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.DataSizeUnit
 import com.leekleak.trafficlight.util.PageTitle
@@ -170,7 +170,7 @@ fun PlanConfig(currentPlan: DataPlan) {
     val activity = LocalActivity.current
 
     var newPlan by remember { mutableStateOf(DataPlan("", "", uiBackground = 3)) }
-    val fontFamily = remember { robotoFlex(0f, 150f, 1000f) }
+    val fontFamily = remember { longGoogleSans() }
     LaunchedEffect(currentPlan) {
         newPlan = currentPlan
     }
@@ -460,7 +460,7 @@ fun PlanConfig(currentPlan: DataPlan) {
 private fun CustomPlanSetup(newPlan: DataPlan, onChange: (date:LocalDate, time: LocalTime, multiplier: Int) -> Unit) {
     var selectedDate by remember { mutableStateOf(fromTimestamp(newPlan.startDate).toLocalDate()) }
     var selectedTime by remember { mutableStateOf(fromTimestamp(newPlan.startDate).toLocalTime()) }
-    val fontFamily = remember { robotoFlex(0f, 150f, 1000f) }
+    val fontFamily = remember { longGoogleSans() }
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = newPlan.startDate,
@@ -659,7 +659,7 @@ fun AppSelector(
                 Text(
                     modifier = Modifier.padding(start = 8.dp),
                     text = stringResource(R.string.no_apps),
-                    fontFamily = robotoFlex(0f, 151f, 1000f),
+                    fontFamily = longGoogleSans(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

@@ -7,8 +7,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import com.leekleak.trafficlight.R
 
-fun carrierFont(): FontFamily = robotoFlex(-10f,25f,675f)
-
 fun doHyeonFont(): FontFamily {
     return FontFamily(
         Font(
@@ -18,52 +16,28 @@ fun doHyeonFont(): FontFamily {
 }
 
 @OptIn(ExperimentalTextApi::class)
-fun robotoFlex(
-    @FloatRange(-10.0, 0.0) slant: Float,
-    @FloatRange(25.0, 151.0) width: Float,
-    @FloatRange(100.0, 1000.0) weight: Float,
-    @FloatRange(323.0, 603.0) counterWidth: Float = 468f
+fun googleSans(
+    @FloatRange(100.0, 1000.0) weight: Float = 400f,
+    @FloatRange(0.0, 100.0) grade: Float = 0f,
+    @FloatRange(-10.0, 0.0) slant: Float = 0f,
+    @FloatRange(25.0, 151.0) width: Float = 100f,
+    @FloatRange(0.0, 100.0) roundness: Float = 0f
 ): FontFamily {
     return FontFamily(
         Font(
-            R.font.roboto_flex,
+            R.font.google_sans_flex,
             variationSettings = FontVariation.Settings(
+                FontVariation.Setting("wght", weight),
+                FontVariation.Setting("GRAD", grade),
                 FontVariation.Setting("slnt", slant),
                 FontVariation.Setting("wdth", width),
-                FontVariation.Setting("wght", weight),
-                FontVariation.Setting("XTRA", counterWidth)
+                FontVariation.Setting("ROND", roundness)
             )
         ),
     )
 }
 
-@OptIn(ExperimentalTextApi::class)
-fun jetbrainsMono(
-    @FloatRange(100.0, 800.0) weight: Float = 400f
-): FontFamily {
-    return FontFamily(
-        Font(
-            R.font.jetbrains_mono,
-            variationSettings = FontVariation.Settings(
-                FontVariation.Setting("wght", weight)
-            )
-        ),
-    )
-}
-
-@OptIn(ExperimentalTextApi::class)
-fun outfit(
-    @FloatRange(100.0, 900.0) weight: Float = 500f
-): FontFamily {
-    return FontFamily(
-        Font(
-            R.font.outfit,
-            variationSettings = FontVariation.Settings(
-                FontVariation.Setting("wght", weight)
-            )
-        ),
-    )
-}
-
-fun historyItemFont() = robotoFlex(0f, 90f, 800f)
-fun notificationIconFont() = robotoFlex(0f, 30f, 600f, 450f)
+fun carrierFont(): FontFamily = googleSans(slant = -10f, weight = 600f, width = 70f)
+fun longGoogleSans(): FontFamily = googleSans(weight = 900f, width = 120f)
+fun historyItemFont() = googleSans(weight = 800f)
+fun notificationIconFont() = googleSans(weight = 600f)

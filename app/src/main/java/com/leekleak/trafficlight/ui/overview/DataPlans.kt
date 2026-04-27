@@ -47,7 +47,7 @@ import com.leekleak.trafficlight.model.NetworkUsageManager
 import com.leekleak.trafficlight.ui.theme.backgrounds
 import com.leekleak.trafficlight.ui.theme.carrierFont
 import com.leekleak.trafficlight.ui.theme.doHyeonFont
-import com.leekleak.trafficlight.ui.theme.robotoFlex
+import com.leekleak.trafficlight.ui.theme.longGoogleSans
 import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.DataSizeUnit
 import com.leekleak.trafficlight.util.simIconRes
@@ -112,7 +112,7 @@ private fun BoxBackground(
         .fillMaxWidth()
         .clip(MaterialTheme.shapes.medium)
         .clickable { onClick() }
-        .border(1.dp, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium)
+        .border(2.dp, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium)
     ) {
         background?.let { background ->
             Image(
@@ -135,7 +135,7 @@ fun UnconfiguredDataPlan(dataPlan: DataPlan, onConfigure: () -> Unit) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val networkUsageManager: NetworkUsageManager = koinInject()
-    val fontFamilyRoboto = remember { robotoFlex(0f, 150f, 1000f) }
+    val fontFamilyGoogleSans = remember { longGoogleSans() }
     val fontFamilyDoHyeon = remember { doHyeonFont() }
     val fontFamilyCarrier = remember { carrierFont() }
 
@@ -146,7 +146,7 @@ fun UnconfiguredDataPlan(dataPlan: DataPlan, onConfigure: () -> Unit) {
         modifier = Modifier
             .height(200.dp)
             .clip(MaterialTheme.shapes.medium)
-            .border(1.dp, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium)
+            .border(2.dp, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium)
             .padding(8.dp),
     ) {
         Row {
@@ -184,7 +184,7 @@ fun UnconfiguredDataPlan(dataPlan: DataPlan, onConfigure: () -> Unit) {
             Text(
                 text = stringResource(R.string.this_month),
                 fontSize = 18.sp,
-                fontFamily = fontFamilyRoboto
+                fontFamily = fontFamilyGoogleSans
             )
         }
         ButtonGroup(
@@ -231,7 +231,7 @@ fun DataPlanSelectorWidget(dataPlan: DataPlan, onClick: () -> Unit) {
 private fun ConfiguredDataPlanContent(dataPlan: DataPlan) {
     val context = LocalContext.current
     val networkUsageManager: NetworkUsageManager = koinInject()
-    val fontFamilyRoboto = remember { robotoFlex(0f, 150f, 1000f) }
+    val fontFamilyGoogleSans = remember { longGoogleSans() }
     val fontFamilyDoHyeon = remember { doHyeonFont() }
     val fontFamilyCarrier = remember { carrierFont() }
     val dataUsage by produceState(0L) { value = networkUsageManager.planUsage(dataPlan) }
@@ -293,7 +293,7 @@ private fun ConfiguredDataPlanContent(dataPlan: DataPlan) {
             ) {
                 Text(
                     text = dataPlan.resetString(context),
-                    fontFamily = fontFamilyRoboto
+                    fontFamily = fontFamilyGoogleSans
                 )
                 val lineUsage = DataSize((usage * DataSizeUnit.GB.toBits()).toLong())
                 LinearWavyProgressIndicator(

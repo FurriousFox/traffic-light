@@ -61,8 +61,7 @@ import com.leekleak.trafficlight.ui.navigation.Settings
 import com.leekleak.trafficlight.ui.settings.PermissionButton
 import com.leekleak.trafficlight.ui.settings.PermissionCard
 import com.leekleak.trafficlight.ui.theme.card
-import com.leekleak.trafficlight.ui.theme.jetbrainsMono
-import com.leekleak.trafficlight.ui.theme.outfit
+import com.leekleak.trafficlight.ui.theme.googleSans
 import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.PageTitle
 import com.leekleak.trafficlight.util.categoryTitle
@@ -226,15 +225,15 @@ private fun OverviewHero() {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             val todayUsage by viewModel.todayUsage.collectAsState()
             val string = DataSize(todayUsage).toStringParts(extraPrecision = true)
-            val fontFamily1 = remember { outfit(700f) }
-            val fontFamily2 = remember { outfit() }
+            val fontFamily1 = remember { googleSans(weight = 800f, width = 120f, roundness = 50f) }
+            val fontFamily2 = remember { googleSans(weight = 600f, width = 120f, roundness = 50f) }
             Row {
                 Text(
                     text = buildAnnotatedString {
-                        withStyle(style = SpanStyle(fontFamily = fontFamily1, fontSize = 48.sp)) {
+                        withStyle(style = SpanStyle(fontFamily = fontFamily1, fontSize = 62.sp)) {
                             append("${string.first}${string.second}")
                         }
-                        withStyle(style = SpanStyle(fontFamily = fontFamily1, fontSize = 32.sp)) {
+                        withStyle(style = SpanStyle(fontFamily = fontFamily1, fontSize = 42.sp)) {
                             append(string.third)
                         }
                     }
@@ -252,7 +251,7 @@ private fun OverviewHero() {
 @Composable
 private fun RowScope.PredictionCard() {
     val viewModel: OverviewVM = koinViewModel()
-    val fontFamily = remember { jetbrainsMono() }
+    val fontFamily = remember { googleSans(weight = 600f) }
     Column(
         modifier = Modifier
             .card()
@@ -294,7 +293,7 @@ private fun RowScope.PredictionCard() {
 private fun RowScope.TrendCard() {
     val viewModel: OverviewVM = koinViewModel()
     val trend by viewModel.trend.collectAsState()
-    val fontFamily = remember { jetbrainsMono() }
+    val fontFamily = remember { googleSans(weight = 600f) }
     Column(
         modifier = Modifier
             .card()
