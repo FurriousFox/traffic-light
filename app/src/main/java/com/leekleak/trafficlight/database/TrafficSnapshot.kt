@@ -15,7 +15,6 @@ import timber.log.Timber
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
-import kotlin.math.max
 
 data class DayUsage(
     val date: LocalDate = LocalDate.now(),
@@ -45,11 +44,11 @@ class TrafficSnapshot (
     private val scope: CoroutineScope,
     private val appPreferenceRepo: AppPreferenceRepo,
     private val connectivityManager: ConnectivityManager,
-    @Volatile private var lastDown: Long = 0,
-    @Volatile private var lastUp: Long = 0,
-    @Volatile private var currentDown: Long = 0,
-    @Volatile private var currentUp: Long = 0,
 ) {
+    @Volatile private var lastDown: Long = 0
+    @Volatile private var lastUp: Long = 0
+    @Volatile private var currentDown: Long = 0
+    @Volatile private var currentUp: Long = 0
     @Volatile private var useFallback: Boolean = TrafficStats.getTotalTxBytes() == TrafficStats.UNSUPPORTED.toLong()
     @Volatile private var altVpnWorkaround: Boolean = false
 
@@ -99,8 +98,8 @@ class TrafficSnapshot (
                 currentDown = TrafficStats.getRxBytes("tun0")
                 currentUp = TrafficStats.getTxBytes("tun0")
             } else { // More accurate, but breaks split tunneling setups
-                currentDown = max(currentDown, TrafficStats.getTotalRxBytes() - TrafficStats.getRxBytes("tun0"))
-                currentUp = max(currentUp, TrafficStats.getTotalTxBytes() - TrafficStats.getTxBytes("tun0"))
+                currentDown = TrafficStats.getTotalRxBytes() - TrafficStats.getRxBytes("tun0")
+                currentUp = TrafficStats.getTotalTxBytes() - TrafficStats.getTxBytes("tun0")
             }
         } else {
             currentDown = TrafficStats.getTotalRxBytes()
