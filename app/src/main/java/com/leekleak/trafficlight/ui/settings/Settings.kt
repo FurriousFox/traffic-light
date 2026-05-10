@@ -119,8 +119,8 @@ fun Settings(paddingValues: PaddingValues) {
             )
             AnimatedVisibility(
                 visible = notification,
-                enter = fadeIn() + slideInVertically() + expandVertically(),
-                exit = fadeOut() + slideOutVertically() + shrinkVertically()
+                enter = fadeIn(tween()) + slideInVertically() + expandVertically(),
+                exit = fadeOut(tween()) + slideOutVertically() + shrinkVertically()
             ) {
                 NavigatePreference(
                     title = stringResource(R.string.advanced_settings),

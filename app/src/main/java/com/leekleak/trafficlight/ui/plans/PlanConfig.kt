@@ -11,6 +11,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -326,8 +327,8 @@ fun PlanConfig(currentPlan: DataPlan) {
                 )
                 AnimatedVisibility(
                     visible = newPlan.notification && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA,
-                    enter = fadeIn() + slideInVertically() + expandVertically(),
-                    exit = fadeOut() + slideOutVertically() + shrinkVertically()
+                    enter = fadeIn(tween()) + slideInVertically() + expandVertically(),
+                    exit = fadeOut(tween()) + slideOutVertically() + shrinkVertically()
                 ) {
                     Row (
                         modifier = Modifier.height(IntrinsicSize.Min),
@@ -739,8 +740,8 @@ fun BackgroundSelector(i: Int, newPlan: DataPlan, onClick: () -> Unit) {
                 .padding(8.dp)
                 .align(Alignment.TopEnd),
             visible = newPlan.uiBackground == i,
-            enter = fadeIn() + scaleIn(),
-            exit = fadeOut() + scaleOut()
+            enter = fadeIn(tween()) + scaleIn(),
+            exit = fadeOut(tween()) + scaleOut()
         ) {
             Icon (
                 painter = painterResource(R.drawable.checkmark),

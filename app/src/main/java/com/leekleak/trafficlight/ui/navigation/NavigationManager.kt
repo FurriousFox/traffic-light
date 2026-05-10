@@ -3,6 +3,7 @@ package com.leekleak.trafficlight.ui.navigation
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -98,8 +99,8 @@ fun NavigationManager() {
             ) {
                 AnimatedVisibility(
                     visible = showBottomBar,
-                    enter = slideInVertically {it} + fadeIn(),
-                    exit = slideOutVertically {it} + fadeOut()
+                    enter = slideInVertically {it} + fadeIn(tween()),
+                    exit = slideOutVertically {it} + fadeOut(tween())
                 ) {
                     HorizontalFloatingToolbar(
                         modifier = Modifier.navBarShadow(),
@@ -128,18 +129,18 @@ fun NavigationManager() {
                 entry<NotificationSettingsKey> { NotificationSettings(paddingValues) }
             },
             transitionSpec = {
-                if (backStack.size == 1) fadeIn() togetherWith fadeOut()
+                if (backStack.size == 1) fadeIn(tween()) togetherWith fadeOut(tween())
                 else {
                     slideInHorizontally { it } togetherWith
                     slideOutHorizontally { -it / 2 } + scaleOut(targetScale = 0.7f) + fadeOut()
                 }
             },
             popTransitionSpec = {
-                slideInHorizontally { -it / 2 } + scaleIn(initialScale = 0.7f) + fadeIn() togetherWith
+                slideInHorizontally { -it / 2 } + scaleIn(initialScale = 0.7f) + fadeIn(tween()) togetherWith
                 slideOutHorizontally { it }
             },
             predictivePopTransitionSpec = {
-                slideInHorizontally { -it/2 } + scaleIn(initialScale = 0.7f) + fadeIn() togetherWith
+                slideInHorizontally { -it/2 } + scaleIn(initialScale = 0.7f) + fadeIn(tween()) togetherWith
                 slideOutHorizontally { it }
             }
         )
