@@ -151,7 +151,7 @@ private fun DataPlanPager(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(painterResource(R.drawable.warning), "Icon")
+                    Icon(painterResource(R.drawable.warning), null)
                     Text(modifier = Modifier.fillMaxWidth(), fontWeight = FontWeight.Bold, text = stringResource(R.string.shizuku_hint))
                 }
                 Text(modifier = Modifier.fillMaxWidth(), text = stringResource(R.string.shizuku_hint_description))

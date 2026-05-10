@@ -107,7 +107,7 @@ fun NavigationManager() {
                         expanded = true,
                         content = {
                             NavigationButton(navigator, OverviewKey, stringResource(R.string.overview), R.drawable.overview)
-                            NavigationButton(navigator, DataPlansKey, "Plans", R.drawable.sim_card)
+                            NavigationButton(navigator, DataPlansKey, stringResource(R.string.plans), R.drawable.sim_card)
                             NavigationButton(navigator, HistoryKey, stringResource(R.string.history), R.drawable.history)
                         },
                     )
