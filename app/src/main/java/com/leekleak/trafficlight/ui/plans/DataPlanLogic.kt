@@ -1,5 +1,6 @@
 package com.leekleak.trafficlight.ui.plans
 
+import com.leekleak.trafficlight.charts.model.BarData
 import com.leekleak.trafficlight.database.DataPlan
 import com.leekleak.trafficlight.database.DataType
 import com.leekleak.trafficlight.database.UsageQuery
@@ -17,7 +18,7 @@ class DataPlanLogic(private val networkUsageManager: NetworkUsageManager) {
         val usageRatio = planUsage.toDouble() / dataPlan.dataMax.toDouble()
         val startDate = dataPlan.getStartDate()
         val endDate = dataPlan.getStartDate(next = true)
-        val timeRatio = Duration.between(startDate, endDate).seconds / Duration.between(LocalDateTime.now(), endDate).seconds
+        val timeRatio = Duration.between(startDate, LocalDateTime.now()).seconds.toDouble() / Duration.between(startDate, endDate).seconds.toDouble()
         val difference = if (usageRatio.isNaN()) 0.0 else usageRatio - timeRatio
 
         return when {
@@ -60,4 +61,6 @@ class DataPlanLogic(private val networkUsageManager: NetworkUsageManager) {
         val remaining = max(dailyBudget - todayUsage, 0L)
         return remaining
     }
+
+    suspend fun getWeekUsage(dataPlan: DataPlan): List<BarData> = networkUsageManager.getWeekUsage(dataPlan.decryptedID, false)
 }

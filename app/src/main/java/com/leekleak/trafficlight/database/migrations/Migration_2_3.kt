@@ -3,7 +3,7 @@ package com.leekleak.trafficlight.database.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.leekleak.trafficlight.database.CryptoManager
-import com.leekleak.trafficlight.model.NetworkUsageManager.Companion.NULL_SUBSCRIBER
+import com.leekleak.trafficlight.database.DataPlan.Companion.NULL_SUBSCRIBER
 
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {

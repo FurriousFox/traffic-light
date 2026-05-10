@@ -5,14 +5,11 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.toPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,7 +18,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -37,21 +33,17 @@ import kotlinx.coroutines.launch
 @Composable
 fun BarGraph(
     data: List<BarData>,
+    showLegend: Boolean = true,
     centerLabels: Boolean = false,
     onClick: (i: Int) -> Unit = {}
 ) {
-    Box(
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surface)
-    ) {
         BarGraphImpl(
             xAxisData = data.map { it.x },
             yAxisData = data.map { Pair(it.y1, it.y2) },
+            showLegend = showLegend,
             centerLabels = centerLabels,
             onClick = onClick
         )
-    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -59,6 +51,7 @@ fun BarGraph(
 private fun BarGraphImpl(
     xAxisData: List<String>,
     yAxisData: List<Pair<Long, Long>>,
+    showLegend: Boolean,
     centerLabels: Boolean,
     onClick: (i: Int) -> Unit
 ) {
@@ -179,27 +172,29 @@ private fun BarGraphImpl(
 
         barGraphHelper.drawGrid(gridColor)
 
-        barGraphHelper.drawLegend(
-            barGraphHelper.metrics.cellularIconOffset.copy(
-                y = barGraphHelper.metrics.cellularIconOffset.y + cellularLegendOffset.value
-            ),
-            primaryColor,
-            shapeCellular,
-            iconCellular,
-            onPrimaryColor,
-            cellularAnimation.value,
-        )
+        if (showLegend) {
+            barGraphHelper.drawLegend(
+                barGraphHelper.metrics.cellularIconOffset.copy(
+                    y = barGraphHelper.metrics.cellularIconOffset.y + cellularLegendOffset.value
+                ),
+                primaryColor,
+                shapeCellular,
+                iconCellular,
+                onPrimaryColor,
+                cellularAnimation.value,
+            )
 
-        barGraphHelper.drawLegend(
-            barGraphHelper.metrics.wifiIconOffset.copy(
-                y = barGraphHelper.metrics.wifiIconOffset.y + wifiLegendOffset.value
-            ),
-            secondaryColor,
-            shapeWifi,
-            iconWifi,
-            onSecondaryColor,
-            wifiAnimation.value,
-        )
+            barGraphHelper.drawLegend(
+                barGraphHelper.metrics.wifiIconOffset.copy(
+                    y = barGraphHelper.metrics.wifiIconOffset.y + wifiLegendOffset.value
+                ),
+                secondaryColor,
+                shapeWifi,
+                iconWifi,
+                onSecondaryColor,
+                wifiAnimation.value,
+            )
+        }
 
         barGraphHelper.drawTextLabelsOverXAndYAxis(gridColor, centerLabels)
         barGraphHelper.drawBars(cornerRadius, primaryColor, secondaryColor, barAnimationSqueeze)

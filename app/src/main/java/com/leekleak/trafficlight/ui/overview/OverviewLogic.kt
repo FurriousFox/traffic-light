@@ -4,16 +4,12 @@ import com.leekleak.trafficlight.charts.model.BarData
 import com.leekleak.trafficlight.database.DataType
 import com.leekleak.trafficlight.database.UsageQuery
 import com.leekleak.trafficlight.model.NetworkUsageManager
-import com.leekleak.trafficlight.util.getName
 import com.leekleak.trafficlight.util.toTimestamp
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.TextStyle
-import java.time.temporal.WeekFields
-import java.util.Locale
 import kotlin.math.max
 
 class OverviewLogic(val networkUsageManager: NetworkUsageManager) {
@@ -84,26 +80,5 @@ class OverviewLogic(val networkUsageManager: NetworkUsageManager) {
         return (hourAverage24 / max(weekAverage, 1.0) - 1) * 100.0
     }
 
-    suspend fun getWeekUsage(): List<BarData> {
-        val field = WeekFields.of(Locale.getDefault())
-        val firstDay = field.firstDayOfWeek
-        val data: MutableList<BarData> = MutableList(7) { i ->
-            val x = firstDay.plus(i.toLong()).getName(TextStyle.SHORT_STANDALONE)
-            BarData(x, 0, 0)
-        }
-        val now = LocalDate.now()
-        val daysPassed = now.get(field.dayOfWeek()) - 1
-
-        coroutineScope {
-            (0..daysPassed).map { i ->
-                async {
-                    val now = now.minusDays(daysPassed.toLong() - i)
-                    val usage1 = networkUsageManager.totalDayUsage(UsageQuery(DataType.Mobile), now)
-                    val usage2 = networkUsageManager.totalDayUsage(UsageQuery(DataType.Wifi), now)
-                    data[i] = data[i].copy(y1 = usage1, y2 = usage2)
-                }
-            }.awaitAll()
-        }
-        return data.toList()
-    }
+    suspend fun getWeekUsage(): List<BarData> = networkUsageManager.getWeekUsage(null, true)
 }

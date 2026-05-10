@@ -2,6 +2,7 @@ package com.leekleak.trafficlight.model
 
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
+import com.leekleak.trafficlight.charts.model.BarData
 import com.leekleak.trafficlight.charts.model.ScrollableBarData
 import com.leekleak.trafficlight.database.AppUsage
 import com.leekleak.trafficlight.database.DataDirection
@@ -18,6 +19,7 @@ import com.leekleak.trafficlight.model.AppManager.Companion.specialUIDs
 import com.leekleak.trafficlight.model.AppManager.Companion.unknownApp
 import com.leekleak.trafficlight.ui.history.DateParams
 import com.leekleak.trafficlight.util.fromTimestamp
+import com.leekleak.trafficlight.util.getName
 import com.leekleak.trafficlight.util.toTimestamp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -28,7 +30,10 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
+import java.time.temporal.WeekFields
+import java.util.Locale
 
 data class UsageData(
     val upload: Long = 0,
@@ -73,8 +78,7 @@ class NetworkUsageManager(
         val startDate = dataPlan.getStartDate()
         val startStamp = startDate.toTimestamp()
         val endStamp = now.toTimestamp()
-        val id = dataPlan.decryptedID
-        val subscriberId = if (id == NULL_SUBSCRIBER) null else id
+        val subscriberId = dataPlan.decryptedID
 
         val networkData = getNetworkDataForType(startStamp, endStamp, subscriberId, DataType.Mobile)
         val stats = networkData.filter { !dataPlan.excludedApps.contains(it.uid) }.sumOf { it.total }
@@ -242,7 +246,26 @@ class NetworkUsageManager(
         emit(data.toList())
     }
 
-    companion object {
-        const val NULL_SUBSCRIBER = "__shizuku_disabled_sim_fallback__"
+    suspend fun getWeekUsage(subscriberId: String?, withWifi: Boolean): List<BarData> {
+        val field = WeekFields.of(Locale.getDefault())
+        val firstDay = field.firstDayOfWeek
+        val data: MutableList<BarData> = MutableList(7) { i ->
+            val x = firstDay.plus(i.toLong()).getName(TextStyle.SHORT_STANDALONE)
+            BarData(x, 0, 0)
+        }
+        val now = LocalDate.now()
+        val daysPassed = now.get(field.dayOfWeek()) - 1
+
+        coroutineScope {
+            (0..daysPassed).map { i ->
+                async {
+                    val now = now.minusDays(daysPassed.toLong() - i)
+                    val usage1 = totalDayUsage(UsageQuery(DataType.Mobile), now, subscriberId)
+                    val usage2 = if (withWifi) totalDayUsage(UsageQuery(DataType.Wifi), now, subscriberId) else 0
+                    data[i] = data[i].copy(y1 = usage1, y2 = usage2)
+                }
+            }.awaitAll()
+        }
+        return data.toList()
     }
 }

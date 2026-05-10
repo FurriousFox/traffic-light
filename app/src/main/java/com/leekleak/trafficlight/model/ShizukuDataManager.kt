@@ -9,7 +9,6 @@ import com.leekleak.trafficlight.ITrafficLightShizukuService
 import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.DataPlanDao
 import com.leekleak.trafficlight.database.DataPlanRepository
-import com.leekleak.trafficlight.model.NetworkUsageManager.Companion.NULL_SUBSCRIBER
 import com.leekleak.trafficlight.services.TrafficLightShizukuService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
@@ -110,10 +109,10 @@ class ShizukuDataManager(
 
     fun updateSimDataBasic() = scope.launch {
         val plans = dataPlanDao.getAll()
-        val newPlans = plans.map { it.copy(simIndex = if (it.decryptedID == NULL_SUBSCRIBER) 0 else -1) }
+        val newPlans = plans.map { it.copy(simIndex = if (it.decryptedID == null) 0 else -1) }
         if (plans.isEmpty()) {
             dataPlanRepository.savePlan(
-                NULL_SUBSCRIBER,
+                null,
                 0,
                 ""
             )

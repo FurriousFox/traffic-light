@@ -13,6 +13,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import com.leekleak.trafficlight.R
+import com.leekleak.trafficlight.database.DataPlan.Companion.NULL_SUBSCRIBER
 import com.leekleak.trafficlight.util.fromTimestamp
 import com.leekleak.trafficlight.util.toTimestamp
 import kotlinx.coroutines.flow.Flow
@@ -60,7 +61,10 @@ data class DataPlan(
         }
     }
     val decryptedID: String?
-        get() = CryptoManager.decrypt(encryptedSubscriberID)
+        get() {
+            val decrypted = CryptoManager.decrypt(encryptedSubscriberID)
+            return if (decrypted == NULL_SUBSCRIBER) null else decrypted
+        }
 
     fun getRemainingDays(): Int {
         val now = LocalDateTime.now()
@@ -90,6 +94,10 @@ data class DataPlan(
                 if (!next) startDate.minusDays(intervalMultiplier.toLong()) else startDate
             }
         }
+    }
+
+    companion object {
+        const val NULL_SUBSCRIBER = "__shizuku_disabled_sim_fallback__"
     }
 }
 
@@ -134,10 +142,10 @@ class Converters {
 }
 
 class DataPlanRepository(private val dao: DataPlanDao) {
-    suspend fun savePlan(plainSubscriberID: String, simIndex: Int, carrierName: String) {
+    suspend fun savePlan(plainSubscriberID: String?, simIndex: Int, carrierName: String) {
         val plan = DataPlan(
-            hashedSubscriberID = CryptoManager.hashIdentifier(plainSubscriberID),
-            encryptedSubscriberID = CryptoManager.encrypt(plainSubscriberID),
+            hashedSubscriberID = CryptoManager.hashIdentifier(plainSubscriberID ?: NULL_SUBSCRIBER),
+            encryptedSubscriberID = CryptoManager.encrypt(plainSubscriberID ?: NULL_SUBSCRIBER),
             simIndex = simIndex,
             carrierName = carrierName
         )

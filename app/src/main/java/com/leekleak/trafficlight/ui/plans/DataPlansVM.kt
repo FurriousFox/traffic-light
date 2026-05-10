@@ -33,4 +33,7 @@ class DataPlansVM(networkUsageManager: NetworkUsageManager): ViewModel() {
 
     val remainingDailyBudget = planFlow.map { dataPlansLogic.getRemainingDailyBudget(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val weekUsage = planFlow.map { dataPlansLogic.getWeekUsage(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }
