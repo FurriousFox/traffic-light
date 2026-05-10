@@ -8,8 +8,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -67,34 +69,6 @@ fun ConfiguredDataPlan(dataPlan: DataPlan, onConfigure: () -> Unit) {
 }
 
 @Composable
-private fun BoxBackground(
-    background: Int? = null,
-    onClick: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    Box (modifier = Modifier
-        .fillMaxWidth()
-        .background(MaterialTheme.colorScheme.surface)
-        .clip(MaterialTheme.shapes.medium)
-        .clickable { onClick() }
-        .border(2.dp, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium)
-    ) {
-        background?.let { background ->
-            Image(
-                modifier = Modifier
-                    .matchParentSize()
-                    .scale(1.2f),
-                painter = painterResource(background),
-                contentDescription = null,
-                contentScale = ContentScale.FillWidth,
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primaryContainer)
-            )
-        }
-        content()
-    }
-}
-
-@Composable
 fun UnconfiguredDataPlan(dataPlan: DataPlan, onConfigure: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     val networkUsageManager: NetworkUsageManager = koinInject()
@@ -105,12 +79,12 @@ fun UnconfiguredDataPlan(dataPlan: DataPlan, onConfigure: () -> Unit) {
     val dataUsage by produceState(0L) { value = networkUsageManager.planUsage(dataPlan) }
     val usage = DataSize(dataUsage).getAsUnit(DataSizeUnit.GB)
     val formatter = remember { DecimalFormat("0.##") }
-    Box (
-        modifier = Modifier
-            .height(200.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .border(2.dp, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium)
-            .padding(8.dp),
+    BoxBackground(
+        background = backgrounds[dataPlan.uiBackground],
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onConfigure()
+        }
     ) {
         Row {
             SimIcon(dataPlan.simIndex)
@@ -166,16 +140,32 @@ fun UnconfiguredDataPlan(dataPlan: DataPlan, onConfigure: () -> Unit) {
 }
 
 @Composable
-fun DataPlanSelectorWidget(dataPlan: DataPlan, onClick: () -> Unit) {
-    val haptic = LocalHapticFeedback.current
-    BoxBackground(
-        background = backgrounds[dataPlan.uiBackground],
-        onClick = {
-            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-            onClick()
-        }
+private fun BoxBackground(
+    background: Int? = null,
+    onClick: () -> Unit,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box (modifier = Modifier
+        .fillMaxWidth()
+        .height(200.dp)
+        .background(MaterialTheme.colorScheme.surface)
+        .clip(MaterialTheme.shapes.medium)
+        .clickable { onClick() }
+        .border(2.dp, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium)
+        .padding(8.dp)
     ) {
-        ConfiguredDataPlanContent(dataPlan)
+        background?.let { background ->
+            Image(
+                modifier = Modifier
+                    .matchParentSize()
+                    .scale(1.2f),
+                painter = painterResource(background),
+                contentDescription = null,
+                contentScale = ContentScale.FillWidth,
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primaryContainer)
+            )
+        }
+        content()
     }
 }
 
@@ -188,76 +178,74 @@ private fun ConfiguredDataPlanContent(dataPlan: DataPlan) {
     val fontFamilyCarrier = remember { carrierFont() }
     val dataUsage by produceState(0L) { value = networkUsageManager.planUsage(dataPlan) }
 
-    Column(Modifier.padding(8.dp)) {
-        Box(Modifier.height(184.dp)) {
-            Row(Modifier.fillMaxWidth()) {
-                SimIcon(dataPlan.simIndex)
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 4.dp),
-                    text = dataPlan.carrierName,
-                    fontFamily = fontFamilyCarrier,
-                    textAlign = TextAlign.End
-                )
+    Box(Modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxWidth()) {
+            SimIcon(dataPlan.simIndex)
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 4.dp),
+                text = dataPlan.carrierName,
+                fontFamily = fontFamilyCarrier,
+                textAlign = TextAlign.End
+            )
+        }
+        val usage by remember(dataUsage) {
+            derivedStateOf {
+                DataSize(dataUsage).getAsUnit(DataSizeUnit.GB)
             }
-            val usage by remember(dataUsage) {
+        }
+        Row(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            val formatter = remember { DecimalFormat("0.##") }
+            Text(
+                modifier = Modifier.alignByBaseline(),
+                text = formatter.format(usage),
+                fontFamily = fontFamilyDoHyeon,
+                fontSize = 64.sp,
+            )
+            val data by remember(dataPlan) {
                 derivedStateOf {
-                    DataSize(dataUsage).getAsUnit(DataSizeUnit.GB)
+                    formatter.format(
+                        DataSize(dataPlan.dataMax).getAsUnit(DataSizeUnit.GB)
+                    )
                 }
             }
-            Row(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                val formatter = remember { DecimalFormat("0.##") }
-                Text(
-                    modifier = Modifier.alignByBaseline(),
-                    text = formatter.format(usage),
-                    fontFamily = fontFamilyDoHyeon,
-                    fontSize = 64.sp,
-                )
-                val data by remember(dataPlan) {
-                    derivedStateOf {
-                        formatter.format(
-                            DataSize(dataPlan.dataMax).getAsUnit(DataSizeUnit.GB)
-                        )
-                    }
-                }
-                Text(
-                    modifier = Modifier.alignByBaseline(),
-                    text = "/${data}GB",
-                    fontFamily = fontFamilyDoHyeon,
-                    fontSize = 36.sp,
-                )
-            }
+            Text(
+                modifier = Modifier.alignByBaseline(),
+                text = "/${data}GB",
+                fontFamily = fontFamilyDoHyeon,
+                fontSize = 36.sp,
+            )
+        }
 
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(8.dp)
-                    .height(48.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Bottom),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = dataPlan.resetString(context),
-                    fontFamily = fontFamilyGoogleSans
-                )
-                val lineUsage = DataSize((usage * DataSizeUnit.GB.toBits()).toLong())
-                LinearWavyProgressIndicator(
-                    modifier = Modifier.fillMaxWidth(),
-                    progress = {
-                        if (dataPlan.dataMax == 0L) 0f
-                        else (lineUsage.byteValue
-                            .toDouble() / dataPlan.dataMax.toDouble()).toFloat()
-                            .coerceIn(0f, 1f)
-                    },
-                )
-            }
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(8.dp)
+                .height(48.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Bottom),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = dataPlan.resetString(context),
+                fontFamily = fontFamilyGoogleSans
+            )
+            val lineUsage = DataSize((usage * DataSizeUnit.GB.toBits()).toLong())
+            LinearWavyProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                progress = {
+                    if (dataPlan.dataMax == 0L) 0f
+                    else (lineUsage.byteValue
+                        .toDouble() / dataPlan.dataMax.toDouble()).toFloat()
+                        .coerceIn(0f, 1f)
+                },
+            )
         }
     }
 }
