@@ -46,21 +46,6 @@ class ShizukuServicesProviderImpl(
         }
     }
 
-    override fun updateSimDataBasic() {
-        scope.launch {
-            val plans = dataPlanDao.getAll()
-            val newPlans = plans.map { it.copy(simIndex = if (it.decryptedID == null) 0 else -1) }
-            if (plans.isEmpty()) {
-                dataPlanRepository.savePlan(
-                    null,
-                    0,
-                    ""
-                )
-            }
-            dataPlanDao.addAll(newPlans)
-        }
-    }
-
     override fun shizukuRunning(): Boolean = shizukuHelper.shizukuRunning()
     override fun shizukuPermission(): Int = shizukuHelper.shizukuPermission()
     override fun shizukuRequestPermission(): Unit = shizukuHelper.shizukuRequestPermission()
@@ -71,6 +56,5 @@ class ShizukuServicesProviderImpl(
 
     override fun disable() {
         shizukuHelper.unbind()
-        updateSimDataBasic()
     }
 }

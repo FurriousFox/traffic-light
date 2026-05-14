@@ -10,7 +10,6 @@ val integrationsModule = module {
     single<ShizukuServicesProvider> {
         object : ShizukuServicesProvider {
             override fun updateSimData() = Unit
-            override fun updateSimDataBasic() = Unit
             override fun shizukuRunning(): Boolean = false
             override fun shizukuPermission(): Int = PackageManager.PERMISSION_DENIED
             override fun shizukuRequestPermission() = Unit

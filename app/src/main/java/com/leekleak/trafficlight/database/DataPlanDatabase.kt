@@ -141,7 +141,7 @@ class Converters {
     }
 }
 
-class DataPlanRepository(private val dao: DataPlanDao) {
+class DataPlanRepository(val dao: DataPlanDao) {
     suspend fun savePlan(plainSubscriberID: String?, simIndex: Int, carrierName: String) {
         val plan = DataPlan(
             hashedSubscriberID = CryptoManager.hashIdentifier(plainSubscriberID ?: NULL_SUBSCRIBER),

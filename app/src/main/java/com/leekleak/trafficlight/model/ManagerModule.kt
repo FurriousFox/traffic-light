@@ -17,6 +17,6 @@ val managerModule = module {
             .build()
     }
 
-    single { PermissionManager(androidContext(), get(), get(), get()) }
+    single { PermissionManager(androidContext(), get(), get(), get(), get()) }
     single { NetworkUsageManager(get(), get()) }
 }
