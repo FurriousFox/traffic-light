@@ -1,23 +1,17 @@
 package com.leekleak.trafficlight.services.notifications
 
-import android.app.Notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.DataPlanDao
-import com.leekleak.trafficlight.services.notifications.SpeedNotification.Companion.NOTIFICATION_CHANNEL_ID_SILENT
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.get
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import org.koin.android.ext.android.inject
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 import java.util.Collections
@@ -104,10 +98,7 @@ class NotificationService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        Timber.i("Starting foreground service")
-        val id = notificationIDCounter.getAndIncrement()
-        startForeground(id, placeholderNotification())
-        activeNotifications.forEach { it.start() }
+        Timber.i("Starting background service")
         updateForegroundNotification()
         return START_STICKY
     }
@@ -117,6 +108,7 @@ class NotificationService : LifecycleService() {
         val firstNotification = activeNotifications.firstOrNull()
         if (firstNotification != null) {
             try {
+                Timber.i("Starting foreground service")
                 firstNotification.startForeground(this)
                 foregroundNotification = firstNotification
             } catch (e: Exception) {
@@ -124,37 +116,20 @@ class NotificationService : LifecycleService() {
             }
         } else {
             stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
         }
     }
 
-    fun placeholderNotification(): Notification {
-        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID_SILENT)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(getString(R.string.app_name_short))
-            .setSilent(true)
-            .setLocalOnly(true)
-            .setOnlyAlertOnce(true)
-            .build()
-    }
-
     @OptIn(ExperimentalAtomicApi::class)
-    companion object: KoinComponent {
+    companion object {
         private var running = AtomicBoolean(false)
         fun startService(context: Context, scope: CoroutineScope) {
             scope.launch {
-                val dataPlanDao: DataPlanDao by inject()
-                val appPreferenceRepo: AppPreferenceRepo by inject()
-                val notificationPlans = dataPlanDao.getActivePlansWithNotificationsFlow().first()
-                val notificationSpeed = appPreferenceRepo.notification.first()
-                if (notificationPlans.isNotEmpty() || notificationSpeed) {
-                    if (!running.exchange(true)) {
-                        runCatching {
-                            context.startForegroundService(Intent(context, NotificationService::class.java))
-                        }.onFailure {
-                            running.exchange(false)
-                            Timber.e(it)
-                        }
+                if (!running.exchange(true)) {
+                    runCatching {
+                        context.startService(Intent(context, NotificationService::class.java))
+                    }.onFailure {
+                        running.exchange(false)
+                        Timber.e(it)
                     }
                 }
             }
