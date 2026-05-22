@@ -52,6 +52,9 @@ class AppPreferenceRepo (
     val shizukuHint: Flow<Boolean> = data.map { it[SHIZUKU_HINT] ?: BuildConfig.SHIZUKU }.distinctUntilChanged()
     suspend fun setShizukuHint(value: Boolean) = dataStore.edit { it[SHIZUKU_HINT] = value }
 
+    val ads: Flow<Boolean> = data.map { it[ADS] ?: false }.distinctUntilChanged()
+    suspend fun setAds(value: Boolean) = dataStore.edit { it[ADS] = value }
+
     private companion object {
         private val NOTIFICATION = booleanPreferencesKey("notification")
         private val LIVE_NOTIFICATION = booleanPreferencesKey("live_notification")
@@ -63,5 +66,6 @@ class AppPreferenceRepo (
         private val THEME = stringPreferencesKey("theme")
         private val SHIZUKU_TRACKING = booleanPreferencesKey("shizuku_tracking")
         private val SHIZUKU_HINT = booleanPreferencesKey("shizuku_hint")
+        private val ADS = booleanPreferencesKey("supporter_ads")
     }
 }

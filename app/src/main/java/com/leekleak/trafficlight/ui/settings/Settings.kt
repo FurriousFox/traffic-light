@@ -191,6 +191,20 @@ fun Settings(paddingValues: PaddingValues) {
 
         categoryTitleSmall { stringResource(R.string.about) }
         item {
+            val ads by appPreferenceRepo.ads.collectAsState(false)
+            SwitchPreference(
+                title = stringResource(R.string.supporter_ads),
+                summary = stringResource(
+                    if (BuildConfig.ADS) R.string.supporter_ads_description
+                    else R.string.supporter_ads_disabled
+                ),
+                icon = painterResource(R.drawable.celebration),
+                value = ads,
+                enabled = BuildConfig.ADS,
+                onValueChanged = { scope.launch { appPreferenceRepo.setAds(it) } },
+            )
+        }
+        item {
             NavigatePreference(
                 title = stringResource(R.string.github),
                 summary = stringResource(R.string.github_description),

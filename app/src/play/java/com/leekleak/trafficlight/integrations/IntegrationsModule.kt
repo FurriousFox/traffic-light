@@ -6,7 +6,7 @@ import org.koin.dsl.module
 
 val integrationsModule = module {
     includes(playModule)
-    single<PlayServicesProvider> { PlayServicesProviderImpl(get()) }
+    single<PlayServicesProvider> { PlayServicesProviderImpl(get(), get(), get()) }
     single<ShizukuServicesProvider> {
         object : ShizukuServicesProvider {
             override fun updateSimData() = Unit

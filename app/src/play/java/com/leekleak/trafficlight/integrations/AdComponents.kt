@@ -1,29 +1,32 @@
 package com.leekleak.trafficlight.integrations
 
-import android.graphics.drawable.GradientDrawable
-import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.TextView
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,9 +34,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -47,13 +52,21 @@ import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdLoaderCallba
 import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdRequest
 import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdView
 import com.leekleak.trafficlight.BuildConfig
+import com.leekleak.trafficlight.R
+import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.ui.theme.card
+import org.koin.compose.koinInject
 import timber.log.Timber
 
 val LocalNativeAdView = compositionLocalOf<NativeAdView?> { null }
 
 @Composable
 fun Ad(adLocation: AdLocation) {
+    val appPreferenceRepo: AppPreferenceRepo = koinInject()
+    val adsEnabled by appPreferenceRepo.ads.collectAsState(false)
+
+    if (!adsEnabled) return
+
     val adUnitId = when(adLocation) {
         AdLocation.Overview -> BuildConfig.ADMOB_UNIT_ID_OVERVIEW
     }
@@ -62,6 +75,7 @@ fun Ad(adLocation: AdLocation) {
 
     LaunchedEffect(adUnitId) {
         Timber.d("Loading ad: $adUnitId")
+        adStatus = "loading"
 
         val adRequest = NativeAdRequest.Builder(adUnitId, listOf(NativeAd.NativeAdType.NATIVE))
             .setAdChoicesPlacement(AdChoicesPlacement.TOP_RIGHT)
@@ -82,100 +96,78 @@ fun Ad(adLocation: AdLocation) {
     }
 
     DisposableEffect(nativeAdState) {
+        val adToDestroy = nativeAdState
         onDispose {
-            nativeAdState?.destroy()
+            adToDestroy?.destroy()
         }
     }
 
-    when (adStatus) {
-        "loaded" -> nativeAdState?.let { CallNativeAd(it) }
-        "loading" -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .card()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Loading Ad...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+    AnimatedContent(
+        targetState = adStatus,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        label = "AdStatus"
+    ) { status ->
+        when (status) {
+            "loaded" -> nativeAdState?.let { CallNativeAd(it) }
+            "loading" -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(144.dp)
+                        .card()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.loading_ad),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
+            "failed" -> { }
         }
-        "failed" -> { }
     }
 }
 
 @Composable
 fun CallNativeAd(nativeAd: NativeAd) {
-    val attributionColor = MaterialTheme.colorScheme.onTertiaryContainer.toArgb()
-    val attributionBg = MaterialTheme.colorScheme.tertiaryContainer.toArgb()
-
     AndroidView(
         modifier = Modifier
             .fillMaxWidth()
             .card(),
         factory = { ctx ->
-            val density = ctx.resources.displayMetrics.density
-            val adView = NativeAdView(ctx).apply {
-                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-            }
-
-            val attributionLabel = TextView(ctx).apply {
-                layoutParams = FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    val margin = (16 * density).toInt()
-                    setMargins(margin, margin, 0, 0)
+            NativeAdView(ctx).apply {
+                val composeView = ComposeView(ctx).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
                 }
-                text = "Ad"
-                setTextColor(attributionColor)
-                textSize = 12f
-                background = GradientDrawable().apply {
-                    setColor(attributionBg)
-                    cornerRadius = 4 * density
-                }
-                setPadding(
-                    (8 * density).toInt(),
-                    (2 * density).toInt(),
-                    (8 * density).toInt(),
-                    (2 * density).toInt()
-                )
-            }
+                addView(composeView)
 
-            val composeView = ComposeView(ctx).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-                setContent {
-                    CompositionLocalProvider(LocalNativeAdView provides adView) {
-                        NativeAdLayout(nativeAd)
+                val adChoicesView = AdChoicesView(ctx).apply {
+                    layoutParams = FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                        val margin = (4 * ctx.resources.displayMetrics.density).toInt()
+                        topMargin = margin
+                        rightMargin = margin
                     }
                 }
+                addView(adChoicesView)
+                this.adChoicesView = adChoicesView
             }
-            
-            adView.addView(composeView)
-            adView.addView(attributionLabel)
-            
-            adView.headlineView = attributionLabel
-
-            val adChoicesView = AdChoicesView(ctx).apply {
-                layoutParams = FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    gravity = android.view.Gravity.TOP or android.view.Gravity.END
+        },
+        update = { adView ->
+            val composeView = adView.getChildAt(0) as ComposeView
+            composeView.setContent {
+                CompositionLocalProvider(LocalNativeAdView provides adView) {
+                    NativeAdLayout(nativeAd)
                 }
             }
-            adView.addView(adChoicesView)
-            adView.adChoicesView = adChoicesView
-
-            adView
         }
     )
 }
@@ -184,64 +176,153 @@ fun CallNativeAd(nativeAd: NativeAd) {
 fun NativeAdLayout(nativeAd: NativeAd) {
     val adView = LocalNativeAdView.current
     
-    Column(modifier = Modifier.padding(16.dp)) {
-        Box(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = nativeAd.headline ?: "",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-
-        Text(
-            text = nativeAd.body ?: "",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(vertical = 4.dp)
-        )
-
-        AndroidView(
-            factory = { context ->
-                MediaView(context).apply {
-                    setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-                    adView?.registerNativeAd(nativeAd, this)
-                }
-            },
+    Row(
+        modifier = Modifier
+            .padding(12.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
-        )
-
-        Row(
-            modifier = Modifier.padding(top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .size(120.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            nativeAd.icon?.let { icon ->
+            AndroidView(
+                factory = { context -> 
+                    MediaView(context).apply {
+                        importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                    }
+                },
+                update = { mediaView ->
+                    if (mediaView.tag != nativeAd) {
+                        adView?.registerNativeAd(nativeAd, mediaView)
+                        mediaView.tag = nativeAd
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+
+            Text(
+                text = stringResource(R.string.ad),
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp
+                ),
+                modifier = Modifier
+                    .padding(4.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .height(120.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
                 AndroidView(
-                    factory = { context ->
-                        ImageView(context).apply {
-                            setImageDrawable(icon.drawable)
+                    factory = { ctx ->
+                        ComposeView(ctx).apply {
+                            adView?.headlineView = this
                         }
                     },
-                    modifier = Modifier.size(32.dp)
+                    update = { composeView ->
+                        composeView.setContent {
+                            Text(
+                                text = nativeAd.headline ?: "",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(end = 20.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+
+                AndroidView(
+                    factory = { ctx ->
+                        ComposeView(ctx).apply {
+                            adView?.bodyView = this
+                        }
+                    },
+                    update = { composeView ->
+                        composeView.setContent {
+                            Text(
+                                text = nativeAd.body ?: "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
-            Button(
-                onClick = { },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                contentPadding = PaddingValues(vertical = 4.dp, horizontal = 12.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = nativeAd.callToAction ?: "",
-                    fontSize = 11.sp
+                nativeAd.icon?.let { icon ->
+                    AndroidView(
+                        factory = { ctx ->
+                            ImageView(ctx).apply {
+                                scaleType = ImageView.ScaleType.FIT_CENTER
+                                adView?.iconView = this
+                            }
+                        },
+                        update = { imageView ->
+                            imageView.setImageDrawable(icon.drawable)
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .padding(end = 8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                    )
+                }
+
+                AndroidView(
+                    factory = { ctx ->
+                        ComposeView(ctx).apply {
+                            adView?.callToActionView = this
+                        }
+                    },
+                    update = { composeView ->
+                        composeView.setContent {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        shape = RoundedCornerShape(8.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = nativeAd.callToAction ?: "",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .height(36.dp)
+                        .weight(1f)
                 )
             }
         }
