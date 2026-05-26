@@ -51,7 +51,15 @@ class SpeedNotification(
     private var aodMode = false
     private var inBits = false
     private var separateUpDown = false
-    private var liveNotification = false
+    private var manualLiveNotification = false
+    private var autoLiveNotification = false
+    private var autoLiveThresholdBytes = AppPreferenceRepo.DEFAULT_AUTO_LIVE_THRESHOLD_BYTES
+    private var speedChannelSwitch = false
+    private var speedChannelThresholdBytes = AppPreferenceRepo.DEFAULT_SPEED_CHANNEL_THRESHOLD_BYTES
+    private var autoLiveActive = false
+    private var autoLiveBelowCounter = 0
+    private var lastChannelId: String? = null
+    private var lastEffectiveLive = false
     private var todayUsage = DayUsage()
 
     init {
@@ -65,9 +73,21 @@ class SpeedNotification(
             appPreferenceRepo.separateUpDown.collect { separateUpDown = it }
         }
         scope.launch {
-            appPreferenceRepo.liveNotification.collect { liveNotification = it; updateNotification(trafficSnapshot) }
+            appPreferenceRepo.liveNotification.collect { manualLiveNotification = it; updateNotification(trafficSnapshot) }
         }
-        updateBaseNotification()
+        scope.launch {
+            appPreferenceRepo.speedChannelSwitch.collect { speedChannelSwitch = it; updateNotification(trafficSnapshot) }
+        }
+        scope.launch {
+            appPreferenceRepo.speedChannelThreshold.collect { speedChannelThresholdBytes = it; updateNotification(trafficSnapshot) }
+        }
+        scope.launch {
+            appPreferenceRepo.autoLiveNotification.collect { autoLiveNotification = it; updateNotification(trafficSnapshot) }
+        }
+        scope.launch {
+            appPreferenceRepo.autoLiveThreshold.collect { autoLiveThresholdBytes = it; updateNotification(trafficSnapshot) }
+        }
+        updateBaseNotification(NOTIFICATION_CHANNEL_ID, manualLiveNotification)
     }
 
     override fun start() {
@@ -114,11 +134,16 @@ class SpeedNotification(
 
     private var lastTitle: String = ""
     private suspend fun updateNotification(trafficSnapshot: TrafficSnapshot) {
-        val data = DataSize(trafficSnapshot.totalSpeed).toString(speed = true, inBits = inBits)
+        val speedBytes = trafficSnapshot.totalSpeed
+        val effectiveLive = resolveEffectiveLive(speedBytes)
+        val channelId = resolveChannelId(speedBytes)
+        val data = DataSize(speedBytes).toString(speed = true, inBits = inBits)
         val title = context.getString(R.string.speed, data)
 
-        if (lastTitle == data) return // If the title is the same, so is the icon.
-        else lastTitle = data
+        if (lastTitle == data && lastChannelId == channelId && lastEffectiveLive == effectiveLive) return
+        lastTitle = data
+        lastChannelId = channelId
+        lastEffectiveLive = effectiveLive
 
         val spacing = 18
         val messageShort =
@@ -127,10 +152,10 @@ class SpeedNotification(
 
         val speed = data.substringBefore(" ")
         val unit = data.substringAfter(" ")
-        updateBaseNotification()
+        updateBaseNotification(channelId, effectiveLive)
         notification = notificationBuilder
             .apply {
-                if (!liveNotification) {
+                if (!effectiveLive) {
                     setSmallIcon(
                         if (!separateUpDown) {
                             notificationIconHelper.createIcon(speed, unit)
@@ -163,14 +188,12 @@ class SpeedNotification(
         todayUsage = DayUsage(date, mobile, wifi)
     }
 
-    private fun updateBaseNotification() {
-        val networkAvailable = isNetworkAvailable()
-        val channel = if (networkAvailable) NOTIFICATION_CHANNEL_ID else NOTIFICATION_CHANNEL_ID_SILENT
-        notificationBuilder = NotificationCompat.Builder(context, channel)
+    private fun updateBaseNotification(channelId: String, effectiveLive: Boolean) {
+        notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.notification)
             .setContentTitle(context.getString(R.string.app_name_short))
             .setOngoing(true)
-            .setRequestPromotedOngoing(liveNotification)
+            .setRequestPromotedOngoing(effectiveLive)
             .setSilent(true)
             .setLocalOnly(true)
             .setOnlyAlertOnce(true)
@@ -182,6 +205,34 @@ class SpeedNotification(
                 )
             )
         notification = notificationBuilder.build()
+    }
+
+    private fun resolveChannelId(speedBytes: Long): String {
+        if (!isNetworkAvailable()) return NOTIFICATION_CHANNEL_ID_DISCONNECTED
+        if (!speedChannelSwitch) return NOTIFICATION_CHANNEL_ID
+        return if (speedBytes >= speedChannelThresholdBytes) {
+            NOTIFICATION_CHANNEL_ID
+        } else {
+            NOTIFICATION_CHANNEL_ID_SILENT
+        }
+    }
+
+    private fun resolveEffectiveLive(speedBytes: Long): Boolean {
+        if (!autoLiveNotification) {
+            autoLiveActive = false
+            autoLiveBelowCounter = 0
+        } else if (speedBytes >= autoLiveThresholdBytes) {
+            autoLiveActive = true
+            autoLiveBelowCounter = 0
+        } else if (autoLiveActive) {
+            autoLiveBelowCounter++
+            if (autoLiveBelowCounter >= AUTO_LIVE_DOWNGRADE_REQUIRED) {
+                autoLiveActive = false
+                autoLiveBelowCounter = 0
+            }
+        }
+
+        return (manualLiveNotification || autoLiveActive) && !separateUpDown
     }
 
     private fun isNetworkAvailable(): Boolean {
@@ -206,7 +257,9 @@ class SpeedNotification(
 
     companion object {
         private const val DATA_UPDATE_FREQ = 4
+        private const val AUTO_LIVE_DOWNGRADE_REQUIRED = 2
         const val NOTIFICATION_CHANNEL_ID = "Persistent Notification"
-        const val NOTIFICATION_CHANNEL_ID_SILENT = "Persistent Notification Silent"
+        const val NOTIFICATION_CHANNEL_ID_SILENT = "Persistent Notification (Silent)"
+        const val NOTIFICATION_CHANNEL_ID_DISCONNECTED = "Persistent Notification Silent"
     }
 }

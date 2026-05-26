@@ -1,6 +1,7 @@
 package com.leekleak.trafficlight.ui.settings
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,8 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.toPath
@@ -47,6 +50,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.charts.GraphTheme
@@ -180,6 +184,98 @@ fun SwitchPreference(
             )
         },
     )
+}
+
+@Composable
+fun SliderPreference(
+    modifier: Modifier = Modifier,
+    title: String,
+    summary: String? = null,
+    icon: Painter? = null,
+    value: Float,
+    valueLabel: String,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int = 0,
+    enabled: Boolean = true,
+    onValueChanged: (Float) -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .card()
+            .alpha(if (enabled) 1f else 0.38f)
+            .padding(
+                start = if (icon != null) 8.dp else 16.dp,
+                end = 16.dp,
+            )
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (icon != null) {
+                Box(
+                    modifier = Modifier
+                        .width(56.dp)
+                        .padding(end = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = icon,
+                        contentDescription = null,
+                    )
+                }
+            } else {
+                Box(modifier = Modifier.size(0.dp))
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 16.dp),
+            ) {
+                ProvideTextStyle(value = MaterialTheme.typography.titleMedium) {
+                    Text(text = title)
+                }
+                if (summary != null) {
+                    CompositionLocalProvider(
+                        LocalTextStyle provides MaterialTheme.typography.bodyMedium,
+                        LocalContentColor provides colorScheme.onSurface,
+                    ) {
+                        Text(text = summary)
+                    }
+                }
+            }
+        }
+        Row(
+            modifier = Modifier
+                .padding(
+                    start = if (icon != null) 64.dp else 0.dp,
+                    bottom = 16.dp,
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Slider(
+                modifier = Modifier.weight(1f),
+                value = value,
+                onValueChange = onValueChanged,
+                valueRange = valueRange,
+                steps = steps,
+                enabled = enabled,
+                interactionSource = interactionSource,
+                thumb = {
+                    SliderDefaults.Thumb(
+                        interactionSource = interactionSource,
+                        thumbSize = DpSize(4.dp, 28.dp)
+                    )
+                }
+            )
+            ProvideTextStyle(value = MaterialTheme.typography.titleMedium) {
+                Text(text = valueLabel, maxLines = 1)
+            }
+        }
+    }
 }
 
 @Composable

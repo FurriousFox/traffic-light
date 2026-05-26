@@ -46,7 +46,10 @@ class TrafficLightApplication : Application() {
         val speedChannel = NotificationChannel(SpeedNotification.NOTIFICATION_CHANNEL_ID, "Persistent Notification", IMPORTANCE_DEFAULT).apply {
             setShowBadge(false)
         }
-        val speedChannelSilent = NotificationChannel(SpeedNotification.NOTIFICATION_CHANNEL_ID_SILENT, "Persistent Notification (Disconnected)", IMPORTANCE_DEFAULT).apply {
+        val speedChannelSilent = NotificationChannel(SpeedNotification.NOTIFICATION_CHANNEL_ID_SILENT, "Persistent Notification (Silent)", IMPORTANCE_DEFAULT).apply {
+            setShowBadge(false)
+        }
+        val speedChannelDisconnected = NotificationChannel(SpeedNotification.NOTIFICATION_CHANNEL_ID_DISCONNECTED, "Persistent Notification (Disconnected)", IMPORTANCE_DEFAULT).apply {
             setShowBadge(false)
         }
         val planChannel = NotificationChannel(PlanNotification.NOTIFICATION_CHANNEL_ID, "Plan Notification", IMPORTANCE_DEFAULT).apply {
@@ -56,6 +59,7 @@ class TrafficLightApplication : Application() {
         notificationManager.createNotificationChannels(listOf(
             speedChannel,
             speedChannelSilent,
+            speedChannelDisconnected,
             planChannel
             ))
     }
