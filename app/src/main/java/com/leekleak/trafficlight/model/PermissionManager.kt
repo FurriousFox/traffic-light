@@ -3,6 +3,7 @@ package com.leekleak.trafficlight.model
 import android.Manifest.permission.POST_NOTIFICATIONS
 import android.app.Activity
 import android.app.AppOpsManager
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Context.POWER_SERVICE
 import android.content.Intent
@@ -11,7 +12,9 @@ import android.os.Build
 import android.os.PowerManager
 import android.os.Process.myUid
 import android.provider.Settings
+import android.widget.Toast
 import androidx.core.net.toUri
+import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.DataPlanRepository
 import com.leekleak.trafficlight.integrations.ShizukuServicesProvider
@@ -92,12 +95,16 @@ class PermissionManager(
     }
 
     fun openUsagePermissionHelp(activity: Activity?) {
-        activity?.startActivity(
-            Intent(
-                Intent.ACTION_VIEW,
-                "https://github.com/leekleak/traffic-light/wiki/Troubleshooting#usage-data-access-denied".toUri()
-            )
+        activity ?: return
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            "https://github.com/leekleak/traffic-light/wiki/Troubleshooting#usage-data-access-denied".toUri()
         )
+        try {
+            activity.startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(activity, context.getString(R.string.no_browser_found), Toast.LENGTH_SHORT).show()
+        }
     }
 
     fun update() {

@@ -68,9 +68,10 @@ fun NavigationManager() {
     val backStack = navigator.backStack
 
     var showBottomBar by remember { mutableStateOf(false) }
+    val currentEntry = navigator.backStack.lastOrNull()
 
-    LaunchedEffect(navigator.backStack.last()) {
-        showBottomBar = mainScreens.contains(navigator.backStack.last())
+    LaunchedEffect(currentEntry) {
+        showBottomBar = mainScreens.contains(currentEntry)
     }
 
     val toolbarOffset =
